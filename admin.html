@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiosko - Panel Administrador</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="admin-dashboard">
+        <!-- Header Admin -->
+        <header class="admin-header">
+            <div class="logo-area">
+                <i class="fas fa-store"></i>
+                <h1>Kiosko Admin</h1>
+            </div>
+            <div class="admin-info">
+                <span><i class="fas fa-user-shield"></i> Administrador</span>
+                <button id="logoutAdminBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Salir</button>
+                <button id="backToStoreBtn" class="back-btn"><i class="fas fa-store"></i> Ver Tienda</button>
+            </div>
+        </header>
+
+        <!-- Dashboard -->
+        <div class="dashboard-container">
+            <!-- Tarjetas de estadísticas -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
+                    <div class="stat-value" id="totalOrders">0</div>
+                    <div class="stat-label">Pedidos Totales</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                    <div class="stat-value" id="pendingOrders">0</div>
+                    <div class="stat-label">Pendientes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-value" id="completedOrders">0</div>
+                    <div class="stat-label">Completados</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-times-circle"></i></div>
+                    <div class="stat-value" id="rejectedOrders">0</div>
+                    <div class="stat-label">Rechazados</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+                    <div class="stat-value" id="totalRevenue">S/ 0</div>
+                    <div class="stat-label">Ingresos Totales</div>
+                </div>
+            </div>
+
+            <!-- Filtros de tiempo -->
+            <div class="time-filters">
+                <button class="time-filter active" data-filter="day">📅 Hoy</button>
+                <button class="time-filter" data-filter="week">📆 Esta Semana</button>
+                <button class="time-filter" data-filter="month">📊 Este Mes</button>
+            </div>
+
+            <!-- Gráficos -->
+            <div class="charts-row">
+                <div class="chart-card">
+                    <h3>Ventas por Periodo</h3>
+                    <canvas id="salesChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Productos Más Vendidos</h3>
+                    <canvas id="topProductsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Gestión de Productos y Categorías -->
+            <div class="management-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-edit"></i> Gestión de Productos</h2>
+                    <div class="action-buttons">
+                        <button id="addCategoryBtn" class="btn-secondary"><i class="fas fa-folder-plus"></i> Nueva Categoría</button>
+                        <button id="addProductBtn" class="btn-primary"><i class="fas fa-plus-circle"></i> Nuevo Producto</button>
+                    </div>
+                </div>
+                <div id="adminCategoriesContainer" class="admin-categories"></div>
+            </div>
+
+            <!-- Gestión de Pedidos -->
+            <div class="orders-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-truck"></i> Gestión de Pedidos</h2>
+                    <div class="order-filters">
+                        <select id="orderStatusFilter">
+                            <option value="all">Todos</option>
+                            <option value="pending">Pendientes</option>
+                            <option value="completed">Completados</option>
+                            <option value="rejected">Rechazados</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="ordersList" class="orders-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modales -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="categoryModalTitle">Nueva Categoría</h3>
+            <input type="text" id="categoryName" placeholder="Nombre de la categoría">
+            <button id="saveCategoryBtn" class="btn-primary">Guardar</button>
+        </div>
+    </div>
+
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="productModalTitle">Nuevo Producto</h3>
+            <input type="text" id="productName" placeholder="Nombre del producto">
+            <input type="text" id="productBrand" placeholder="Presentación (ej: 500ml)">
+            <input type="number" id="productPrice" placeholder="Precio S/." step="0.01">
+            <select id="productCategorySelect"></select>
+            <button id="saveProductBtn" class="btn-primary">Guardar</button>
+        </div>
+    </div>
+
+    <div id="orderDetailModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>Detalle del Pedido</h3>
+            <div id="orderDetailContent"></div>
+            <div class="order-status-buttons" id="orderStatusButtons">
+                <button class="status-btn pending" data-status="pending">Pendiente</button>
+                <button class="status-btn completed" data-status="completed">Completado</button>
+                <button class="status-btn rejected" data-status="rejected">Rechazado</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
