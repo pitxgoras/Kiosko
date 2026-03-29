@@ -66,7 +66,7 @@ Kiosko/
 
 | Campo | Valor |
 |-------|-------|
-| 📞 Número | `+51 932 600 214` |
+| 📞 Número | `+51 9-- --- ---` |
 
 > ⚠️ El número está oculto en el código. Solo el administrador lo conoce.
 
