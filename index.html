@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Kiosko - Demo</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter'; background:#f5f7fb; }
+
+.main-header {
+    background: linear-gradient(135deg, #2c3e50, #1a2632);
+    padding: 1rem;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    color:white;
+}
+
+.main-content {
+    display:flex;
+    flex-direction:column;
+    padding:1rem;
+    gap:1rem;
+}
+
+@media(min-width:768px){
+    .main-content{ flex-direction:row; }
+    .catalog-section{ flex:2; }
+    .cart-section{ flex:1; }
+}
+
+.catalog-section, .cart-section {
+    background:white;
+    border-radius:1rem;
+    padding:1rem;
+}
+
+.products-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+    gap:1rem;
+}
+
+.product-card {
+    border:1px solid #eee;
+    padding:1rem;
+    border-radius:10px;
+    text-align:center;
+}
+
+.add-to-cart-btn {
+    background:#2c3e50;
+    color:white;
+    border:none;
+    padding:0.5rem;
+    width:100%;
+}
+
+.category-tab {
+    margin:5px;
+    padding:5px 10px;
+    border:none;
+    cursor:pointer;
+}
+
+.category-tab.active {
+    background:#2c3e50;
+    color:white;
+}
+
+#authorBadge {
+    position: fixed;
+    bottom: 15px;
+    right: 15px;
+    background: #2c3e50;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    z-index: 9999;
+}
+
+#authorBadge a {
+    color: #f1c40f;
+    text-decoration: none;
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<header class="main-header">
+    <h2><i class="fas fa-store"></i> Kiosko</h2>
+</header>
+
+<div class="main-content">
+
+<!-- CATÁLOGO -->
+<div class="catalog-section">
+
+<input type="text" id="searchInput" placeholder="Buscar productos..." style="width:100%; padding:10px; margin-bottom:10px;">
+
+<div id="categoriesTabs"></div>
+
+<div id="productsGrid" class="products-grid"></div>
+
+</div>
+
+<!-- CARRITO -->
+<div class="cart-section">
+<h3><i class="fas fa-shopping-cart"></i> Tu Pedido</h3>
+<button onclick="clearCart()">Vaciar</button>
+<div id="cartItems">No hay productos</div>
+
+<h3 id="totalAmount">S/ 0.00</h3>
+
+<button onclick="sendOrder()" style="background:#25D366;color:white;padding:10px;border:none;width:100%;">
+<i class="fab fa-whatsapp"></i> Enviar Pedido
+</button>
+</div>
+
+</div>
+
+<!-- BADGE AUTOR -->
+<div id="authorBadge">
+Autor: <a href="https://pitxgoras.github.io/Kiosko/" target="_blank">Pitxgoras</a>
+</div>
+
+<script>
+let products = [];
+let categories = [];
+let cart = [];
+
+// 🔥 CARGAR JSON
+async function loadData(){
+    const res = await fetch('products.json');
+    products = await res.json();
+
+    const map = {};
+    products.forEach(p => map[p.category_id] = p.category_name);
+
+    categories = Object.entries(map).map(([id,name])=>({id,name}));
+
+    renderCategories();
+    renderProducts(products);
+}
+
+// 🔥 CATEGORIAS
+function renderCategories(){
+    const c = document.getElementById('categoriesTabs');
+    c.innerHTML = `<button class="category-tab active" onclick="filterCat('all')">Todos</button>`;
+
+    categories.forEach(cat=>{
+        c.innerHTML += `<button class="category-tab" onclick="filterCat(${cat.id})">${cat.name}</button>`;
+    });
+}
+
+function filterCat(id){
+    if(id==='all') renderProducts(products);
+    else renderProducts(products.filter(p=>p.category_id==id));
+}
+
+// 🔥 PRODUCTOS
+function renderProducts(list){
+    const grid = document.getElementById('productsGrid');
+
+    grid.innerHTML = list.map(p=>`
+        <div class="product-card">
+            <div><b>${p.name}</b></div>
+            <div>${p.brand || ''}</div>
+            <div style="color:#27ae60;">S/ ${p.price.toFixed(2)}</div>
+            <button class="add-to-cart-btn" onclick="addToCart(${p.id},'${p.name}',${p.price})">
+                Añadir
+            </button>
+        </div>
+    `).join('');
+}
+
+// 🔥 CARRITO
+function addToCart(id,name,price){
+    const item = cart.find(i=>i.id===id);
+    if(item) item.quantity++;
+    else cart.push({id,name,price,quantity:1});
+    renderCart();
+}
+
+function renderCart(){
+    const c = document.getElementById('cartItems');
+
+    if(cart.length===0){
+        c.innerHTML="No hay productos";
+        document.getElementById('totalAmount').innerText="S/ 0.00";
+        return;
+    }
+
+    let total=0;
+
+    c.innerHTML = cart.map(i=>{
+        let sub=i.price*i.quantity;
+        total+=sub;
+        return `
+        ${i.name} x${i.quantity} - S/ ${sub.toFixed(2)}
+        <button onclick="changeQty(${i.id},1)">+</button>
+        <button onclick="changeQty(${i.id},-1)">-</button>
+        <button onclick="removeItem(${i.id})">x</button>
+        <br>`;
+    }).join('');
+
+    document.getElementById('totalAmount').innerText="S/ "+total.toFixed(2);
+}
+
+function changeQty(id,delta){
+    const i = cart.find(x=>x.id===id);
+    if(!i) return;
+    i.quantity+=delta;
+    if(i.quantity<=0) removeItem(id);
+    renderCart();
+}
+
+function removeItem(id){
+    cart = cart.filter(i=>i.id!==id);
+    renderCart();
+}
+
+function clearCart(){
+    cart=[];
+    renderCart();
+}
+
+// 🔥 BUSCAR
+document.getElementById('searchInput').addEventListener('input',e=>{
+    const t = e.target.value.toLowerCase();
+    renderProducts(products.filter(p=>p.name.toLowerCase().includes(t)));
+});
+
+// 🔥 WHATSAPP
+function sendOrder(){
+    if(cart.length===0) return alert("Carrito vacío");
+
+    let text="🛒 PEDIDO:\n\n";
+    let total=0;
+
+    cart.forEach(i=>{
+        let sub=i.price*i.quantity;
+        total+=sub;
+        text+=`${i.name} x${i.quantity} = S/ ${sub}\n`;
+    });
+
+    text+=`\nTOTAL: S/ ${total}`;
+
+    window.open(`https://wa.me/51932600214?text=${encodeURIComponent(text)}`);
+}
+
+loadData();
+</script>
+
+</body>
+</html>
